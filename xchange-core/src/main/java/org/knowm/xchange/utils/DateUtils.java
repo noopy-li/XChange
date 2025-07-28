@@ -59,6 +59,7 @@ public class DateUtils {
 
   public static String toISODateString(Date date) {
     SimpleDateFormat isoDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    isoDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
     return isoDateFormat.format(date);
   }
 
