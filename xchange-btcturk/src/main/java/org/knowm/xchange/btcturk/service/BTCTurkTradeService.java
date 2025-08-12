@@ -31,7 +31,6 @@ public class BTCTurkTradeService extends BTCTurkTradeServiceRaw implements Trade
 
   public BTCTurkTradeService(Exchange exchange) {
     super(exchange);
-    // TODO Auto-generated constructor stub
   }
 
   @Override

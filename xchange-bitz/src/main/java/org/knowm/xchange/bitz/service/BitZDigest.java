@@ -1,6 +1,7 @@
 package org.knowm.xchange.bitz.service;
 
 import jakarta.ws.rs.FormParam;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
@@ -16,25 +17,19 @@ public class BitZDigest implements ParamsDigest {
     this.md5 = MessageDigest.getInstance("MD5");
   }
 
-  // TODO: Handle Exception
   public static BitZDigest createInstance() {
     try {
       return new BitZDigest();
     } catch (NoSuchAlgorithmException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      throw new IllegalStateException("Unable to load MD5 digest", e);
     }
-
-    return null;
   }
 
-  // TODO: Fix Current Signing - Rejected By Exchange
   @Override
   public String digestParams(RestInvocation restInvocation) {
     // Get Parameters
     Map<String, String> params = restInvocation.getParamsMap().get(FormParam.class).asHttpHeaders();
 
-    // TODO: Find More Elegant Solution To Remove Sign
     // Order By Key Alphabetically, Concancecate Values
     byte[] unsigned =
         params.entrySet().stream()
@@ -42,9 +37,13 @@ public class BitZDigest implements ParamsDigest {
             .filter(e -> !e.getKey().equalsIgnoreCase("sign"))
             .map(e -> e.getValue())
             .collect(Collectors.joining())
-            .getBytes();
+            .getBytes(StandardCharsets.UTF_8);
 
-    // TODO: Determine Charceter Encoding
-    return String.valueOf(md5.digest(unsigned));
+    byte[] digest = md5.digest(unsigned);
+    StringBuilder hex = new StringBuilder(digest.length * 2);
+    for (byte b : digest) {
+      hex.append(String.format("%02x", b));
+    }
+    return hex.toString();
   }
 }

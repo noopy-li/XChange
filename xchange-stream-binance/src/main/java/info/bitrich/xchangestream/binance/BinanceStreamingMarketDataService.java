@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,6 +62,7 @@ import org.knowm.xchange.dto.marketdata.OrderBook;
 import org.knowm.xchange.dto.marketdata.OrderBookUpdate;
 import org.knowm.xchange.dto.marketdata.Ticker;
 import org.knowm.xchange.dto.marketdata.Trade;
+import org.knowm.xchange.dto.trade.LimitOrder;
 import org.knowm.xchange.exceptions.ExchangeException;
 import org.knowm.xchange.exceptions.RateLimitExceededException;
 import org.knowm.xchange.instrument.Instrument;
@@ -975,8 +977,31 @@ public class BinanceStreamingMarketDataService implements StreamingMarketDataSer
           return false;
         } else {
           finalUpdateIdPrev = delta.getLastUpdateId();
-          // FIXME The underlying impl would be more optimal if LimitOrders were created directly.
-          extractOrderBookUpdates(instrument, delta).forEach(update -> book.update(update));
+          Date timestamp = delta.getEventTime();
+          delta.getOrderBook()
+              .bids
+              .forEach(
+                  (price, volume) ->
+                      book.update(
+                          new LimitOrder(
+                              OrderType.BID,
+                              volume,
+                              instrument,
+                              null,
+                              timestamp,
+                              price)));
+          delta.getOrderBook()
+              .asks
+              .forEach(
+                  (price, volume) ->
+                      book.update(
+                          new LimitOrder(
+                              OrderType.ASK,
+                              volume,
+                              instrument,
+                              null,
+                              timestamp,
+                              price)));
         }
         return true;
       }

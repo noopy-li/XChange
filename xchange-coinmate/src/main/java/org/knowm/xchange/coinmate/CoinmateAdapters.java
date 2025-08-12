@@ -150,8 +150,7 @@ public class CoinmateAdapters {
       trades.add(trade);
     }
 
-    // TODO correct sort order?
-    return new Trades(trades, Trades.TradeSortType.SortByID);
+    return new Trades(trades, Trades.TradeSortType.SortByTimestamp);
   }
 
   public static Trade adaptTrade(CoinmateTransactionsEntry coinmateEntry) {
@@ -394,14 +393,8 @@ public class CoinmateAdapters {
     List<LimitOrder> ordersList = new ArrayList<>(coinmateOpenOrders.getData().size());
 
     for (CoinmateOpenOrdersEntry entry : coinmateOpenOrders.getData()) {
-
-      Order.OrderType orderType;
-      // TODO
-      if ("BUY".equals(entry.getType())) {
-        orderType = Order.OrderType.BID;
-      } else if ("SELL".equals(entry.getType())) {
-        orderType = Order.OrderType.ASK;
-      } else {
+      Order.OrderType orderType = typeToOrderTypeOrNull(entry.getType());
+      if (orderType == null) {
         throw new CoinmateException("Unknown order type");
       }
 
@@ -522,20 +515,38 @@ public class CoinmateAdapters {
       cumulativeAmount = coinmateOrder.getCumulativeAmount();
     }
 
-    // TODO: we can probably use `orderTradeType` to distinguish between Market and Limit order
-    return new MarketOrder(
-        orderType,
-        originalAmount,
-        null,
-        Long.toString(coinmateOrder.getId()),
-        new Date(coinmateOrder.getTimestamp()),
-        averagePrice,
+    BigDecimal cumulative =
         cumulativeAmount == null
             ? getCumulativeAmount(originalAmount, remainingAmount)
-            : cumulativeAmount,
-        null,
-        orderStatus,
-        null);
+            : cumulativeAmount;
+    String id = Long.toString(coinmateOrder.getId());
+    Date date = new Date(coinmateOrder.getTimestamp());
+
+    if ("MARKET".equalsIgnoreCase(coinmateOrder.getOrderTradeType())) {
+      return new MarketOrder(
+          orderType,
+          originalAmount,
+          null,
+          id,
+          date,
+          averagePrice,
+          cumulative,
+          null,
+          orderStatus,
+          null);
+    } else {
+      return new LimitOrder(
+          orderType,
+          originalAmount,
+          null,
+          id,
+          date,
+          coinmateOrder.getPrice(),
+          averagePrice,
+          cumulative,
+          null,
+          orderStatus);
+    }
   }
 
   public static Ticker adaptTradeStatistics(

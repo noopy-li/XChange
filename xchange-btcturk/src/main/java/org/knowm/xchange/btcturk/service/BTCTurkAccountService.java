@@ -19,7 +19,6 @@ public class BTCTurkAccountService extends BTCTurkAccountServiceRaw implements A
 
   public BTCTurkAccountService(Exchange exchange) {
     super(exchange);
-    // TODO Auto-generated constructor stub
   }
 
   @Override
