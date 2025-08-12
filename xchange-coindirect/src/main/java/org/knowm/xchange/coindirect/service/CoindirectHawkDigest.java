@@ -1,8 +1,8 @@
 package org.knowm.xchange.coindirect.service;
 
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -82,35 +82,22 @@ public class CoindirectHawkDigest extends BaseParamsDigest {
               + "\"";
 
       return authorization;
-    } catch (MalformedURLException ignored) {
-
+    } catch (MalformedURLException e) {
+      throw new IllegalStateException("Invalid URL: " + restInvocation.getInvocationUrl(), e);
     }
-    return null;
   }
 
   private String generateHash(String key, String data) {
-    Mac sha256_HMAC = null;
-    String result = null;
-
     try {
-      byte[] byteKey = key.getBytes("UTF-8");
+      byte[] byteKey = key.getBytes(StandardCharsets.UTF_8);
       final String HMAC_SHA256 = "HmacSHA256";
-      sha256_HMAC = Mac.getInstance(HMAC_SHA256);
+      Mac sha256_HMAC = Mac.getInstance(HMAC_SHA256);
       SecretKeySpec keySpec = new SecretKeySpec(byteKey, HMAC_SHA256);
       sha256_HMAC.init(keySpec);
-      byte[] mac_data = sha256_HMAC.doFinal(data.getBytes());
+      byte[] mac_data = sha256_HMAC.doFinal(data.getBytes(StandardCharsets.UTF_8));
       return Base64.getEncoder().encodeToString(mac_data);
-    } catch (UnsupportedEncodingException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (NoSuchAlgorithmException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (InvalidKeyException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } finally {
+    } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+      throw new IllegalStateException("Could not generate hash", e);
     }
-    return "";
   }
 }
